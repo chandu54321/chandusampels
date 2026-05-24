@@ -45,3 +45,41 @@ WHERE USER_NAME='admin';
 SELECT USER_NAME, ATTEMPT_COUNT, USER_ENABLED, USER_DELETED
 FROM TB_USER;
 after udpadating this one use the above one commands
+
+
+
+---------------------------------------
+
+UPDATE TB_USER
+SET USER_PASSWORD='$2a$10$7EqJtq98hPqEX7fNZaFWoOHi8gqVxvQ0M0jJmq9hw3rroWAtxEvsK'
+WHERE USER_NAME='admin';
+-----------
+UPDATE TB_USER
+SET ATTEMPT_COUNT=0
+WHERE USER_NAME='admin';
+--------------
+docker exec -it domibus-mysql mysql -u root -p
+ rootpassword
+-------------------
+USE domibus;
+--------------
+
+docker exec -it domibus bash
+------------------
+apt install apache2-utils -y
+-------------------
+htpasswd -bnBC 10 "" admin | tr -d ':\n'
+--------------------------------
+USE domibus;
+
+UPDATE TB_USER
+SET
+USER_PASSWORD='$2y$10$2TWUWpOU9Qpp78PomvYx3OkoDV1OarnnGXjLjs4aTzUaEoQ9gDAPW',
+ATTEMPT_COUNT=0,
+USER_ENABLED=1,
+USER_DELETED=0x00,
+DEFAULT_PASSWORD=0x00
+WHERE USER_NAME='admin';
+
+COMMIT;
+----------------------------------
