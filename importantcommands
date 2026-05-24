@@ -40,3 +40,4 @@ domibus.quartz.datasource.url=jdbc:mysql://domibus-mysql:3306/domibus?useSSL=fal
 domibus.quartz.datasource.user=domibus
 domibus.quartz.datasource.password=domibus
 echo 'domibus.entityManagerFactory.jpaProperty.hibernate.dialect=org.hibernate.dialect.MySQLDialect' >> /opt/domibus/conf/domibus/domibus.properties
+domibus.entityManagerFactory.jpaProperty.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
