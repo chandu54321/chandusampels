@@ -1,0 +1,27 @@
+first download the script:
+
+wget:https://ec.europa.eu/digital-building-blocks/artifact/service/rest/v1/search/assets/download?repository=eDelivery&group=eu.domibus&name=domibus-msh-sql-distribution&maven.extension=zip&sort=version&direction=desc
+
+
+FROM mysql:8.4
+
+ENV MYSQL_ROOT_PASSWORD=rootpassword
+ENV MYSQL_DATABASE=domibus
+ENV MYSQL_USER=domibus
+ENV MYSQL_PASSWORD=domibus
+
+# UTF8 configuration
+CMD ["mysqld", \
+"--character-set-server=utf8mb4", \
+"--collation-server=utf8mb4_unicode_ci"]
+
+# =====================================================
+# DOMIBUS MYSQL SCHEMA
+# =====================================================
+
+COPY sql-scripts/5.2/mysql/mysql-5.2.ddl \
+/docker-entrypoint-initdb.d/01-mysql-5.2.sql
+
+COPY sql-scripts/5.2/mysql/mysql-5.2-data.ddl \
+/docker-entrypoint-initdb.d/02-mysql-5.2-data.sql
+
