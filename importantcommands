@@ -1,0 +1,42 @@
+docker network create domibus-net
+
+docker network connect domibus-net domibus-mysql
+
+docker run -d \
+  --name domibus \
+  --link domibus-mysql \
+  -p 8080:8080 \
+  -p 8443:8443 \
+ --network domibus-net \
+  domibus:5.2
+
+
+docker run -d \
+  --name domibus-mysql \
+  -e MYSQL_ROOT_PASSWORD=rootpassword \
+  -e MYSQL_DATABASE=domibus \
+  -e MYSQL_USER=domibus \
+  -e MYSQL_PASSWORD=domibus \
+  --network domibus-net \
+  -p 3306:3306 \
+  domibus-mysql:5.2
+
+
+
+domibus.datasource.user=domibus
+domibus.datasource.password=domibus
+
+domibus.database.serverName=domibus-mysql
+domibus.database.port=3306
+
+domibus.datasource.maxLifetime=1800
+domibus.datasource.connectionTimeout=30
+domibus.datasource.idleTimeout=600
+domibus.datasource.maxPoolSize=10
+domibus.datasource.minimumIdle=10
+
+domibus.quartz.datasource.driverClassName=com.mysql.cj.jdbc.Driver
+domibus.quartz.datasource.url=jdbc:mysql://domibus-mysql:3306/domibus?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+domibus.quartz.datasource.user=domibus
+domibus.quartz.datasource.password=domibus
+echo 'domibus.entityManagerFactory.jpaProperty.hibernate.dialect=org.hibernate.dialect.MySQLDialect' >> /opt/domibus/conf/domibus/domibus.properties
