@@ -1,0 +1,106 @@
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# =====================================================
+# JAVA
+# =====================================================
+ENV JAVA_HOME=/opt/jdk-21
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
+
+# =====================================================
+# DOMIBUS
+# =====================================================
+ENV DOMIBUS_HOME=/opt/domibus
+ENV CATALINA_HOME=/opt/domibus
+ENV DOMIBUS_CONFIG_LOCATION=/opt/domibus/conf/domibus
+
+# =====================================================
+# INSTALL REQUIRED PACKAGES
+# =====================================================
+RUN apt-get update && apt-get install -y \
+    wget \
+    unzip \
+    curl \
+    ca-certificates \
+    tar \
+    net-tools \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /tmp
+
+# =====================================================
+# INSTALL ORACLE JDK 21
+# =====================================================
+RUN wget https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.tar.gz \
+    -O jdk.tar.gz && \
+    mkdir -p /opt && \
+    tar -xzf jdk.tar.gz -C /opt && \
+    mv /opt/jdk-21* /opt/jdk-21 && \
+    rm -f jdk.tar.gz
+
+RUN java -version
+
+# =====================================================
+# DOWNLOAD DOMIBUS 5.2 JEE10
+# =====================================================
+RUN wget "https://ec.europa.eu/digital-building-blocks/artifact/repository/eDelivery/eu/domibus/domibus-msh-distribution/5.2-JEE10/domibus-msh-distribution-5.2-JEE10-tomcat-full.zip" \
+    -O domibus.zip
+
+RUN unzip domibus.zip -d /opt && \
+    rm -f domibus.zip
+
+# =====================================================
+# REMOVE H2 CONFIGURATION
+# =====================================================
+RUN sed -i '/org.h2.Driver/d' /opt/domibus/conf/domibus/domibus.properties && \
+    sed -i '/jdbc:h2/d' /opt/domibus/conf/domibus/domibus.properties && \
+    sed -i '/SCHEMA=domibus/d' /opt/domibus/conf/domibus/domibus.properties
+
+# =====================================================
+# DOWNLOAD MYSQL JDBC DRIVER
+# =====================================================
+RUN wget https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.4.0/mysql-connector-j-8.4.0.jar \
+    -O /opt/domibus/lib/mysql-connector-j-8.4.0.jar
+
+# =====================================================
+# APPEND MYSQL CONFIGURATION
+# =====================================================
+RUN echo "" >> /opt/domibus/conf/domibus/domibus.properties && \
+    echo "# ====================================================" >> /opt/domibus/conf/domibus/domibus.properties && \
+    echo "# MYSQL CONFIGURATION" >> /opt/domibus/conf/domibus/domibus.properties && \
+    echo "# ====================================================" >> /opt/domibus/conf/domibus/domibus.properties && \
+    echo "domibus.database.serverName=domibus-mysql" >> /opt/domibus/conf/domibus/domibus.properties && \
+    echo "domibus.database.port=3306" >> /opt/domibus/conf/domibus/domibus.properties && \
+    echo "domibus.datasource.driverClassName=com.mysql.cj.jdbc.Driver" >> /opt/domibus/conf/domibus/domibus.properties && \
+    echo "domibus.datasource.url=jdbc:mysql://domibus-mysql:3306/domibus?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC" >> /opt/domibus/conf/domibus/domibus.properties && \
+    echo "domibus.datasource.username=domibus" >> /opt/domibus/conf/domibus/domibus.properties && \
+    echo "domibus.datasource.password=domibus" >> /opt/domibus/conf/domibus/domibus.properties && \
+    echo "domibus.database.hibernate.dialect=org.hibernate.dialect.MySQLDialect" >> /opt/domibus/conf/domibus/domibus.properties && \
+    echo "domibus.datasource.tomcat.testWhileIdle=true" >> /opt/domibus/conf/domibus/domibus.properties && \
+    echo "domibus.datasource.tomcat.validationQuery=SELECT 1" >> /opt/domibus/conf/domibus/domibus.properties
+
+# =====================================================
+# CREATE setenv.sh
+# =====================================================
+RUN echo '#!/bin/bash' > /opt/domibus/bin/setenv.sh && \
+    echo 'export JAVA_HOME=/opt/jdk-21' >> /opt/domibus/bin/setenv.sh && \
+    echo 'export PATH=$JAVA_HOME/bin:$PATH' >> /opt/domibus/bin/setenv.sh && \
+    echo 'export CATALINA_OPTS="-Xms1G -Xmx2G -Dfile.encoding=UTF-8 -Ddomibus.config.location=/opt/domibus/conf/domibus -Ddomibus.datasource.driverClassName=com.mysql.cj.jdbc.Driver -Ddomibus.datasource.url=jdbc:mysql://domibus-mysql:3306/domibus?useSSL=false\&allowPublicKeyRetrieval=true\&serverTimezone=UTC -Ddomibus.datasource.username=domibus -Ddomibus.datasource.password=domibus"' >> /opt/domibus/bin/setenv.sh
+
+# =====================================================
+# PERMISSIONS
+# =====================================================
+RUN chmod +x /opt/domibus/bin/*.sh
+
+# =====================================================
+# PORTS
+# =====================================================
+EXPOSE 8080 8443
+
+WORKDIR /opt/domibus
+
+# =====================================================
+# START DOMIBUS
+# =====================================================
+CMD ["bin/catalina.sh", "run"]
