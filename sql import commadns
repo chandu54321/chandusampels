@@ -1,0 +1,47 @@
+ apt install apache2-utils -y
+
+/opt/domibus# htpasswd -bnBC 10 "" admin | tr -d ':\n'
+
+docker exec -it domibus grep "domibus.datasource.user" /opt/domibus/conf/domibus/domibus.properties
+
+
+USE domibus;
+
+UPDATE TB_USER
+SET
+USER_PASSWORD='$2y$10$UDe5WON2id0ZNEwfBwr3nOjEZX.zk0sAIAYIInZ04NgABOCoAIv2q',
+ATTEMPT_COUNT=0,
+USER_ENABLED=1,
+USER_DELETED=0x00,
+DEFAULT_PASSWORD=0x00
+WHERE USER_NAME='admin';
+
+COMMIT;
+
+commands before i checked to for default usename and password:
+  
+DESCRIBE TB_USER;
+SELECT * FROM TB_USER;
+SELECT * FROM TB_AUTHENTICATION_ENTRY;
+SELECT COUNT(*) FROM TB_USER;
+SELECT COUNT(*) FROM TB_AUTHENTICATION_ENTRY;
+UPDATE TB_USER
+SET USER_PASSWORD='$2a$10$7EqJtq98hPqEX7fNZaFWoOHi8gqVxvQ0M0jJmq9hw3rroWAtxEvsK'
+WHERE USER_NAME='admin';
+UPDATE TB_USER
+SET ATTEMPT_COUNT=0
+WHERE USER_NAME='admin';
+docker exec -it domibus-mysql mysql -u root -p
+  rootpassword
+UPDATE TB_USER
+SET
+  USER_PASSWORD='$2a$10$7EqJtq98hPqEX7fNZaFWoOHi8gqVxvQ0M0jJmq9hw3rroWAtxEvsK',
+  ATTEMPT_COUNT=0,
+  USER_ENABLED=b'1',
+  USER_DELETED=b'0',
+  DEFAULT_PASSWORD=b'0',
+  SUSPENSION_DATE=NULL
+WHERE USER_NAME='admin';
+SELECT USER_NAME, ATTEMPT_COUNT, USER_ENABLED, USER_DELETED
+FROM TB_USER;
+after udpadating this one use the above one commands
