@@ -1,7 +1,6 @@
 first download the script:
 
-wget "https://ec.europa.eu/digital-building-blocks/artifact/service/rest/v1/search/assets/download?repository=eDelivery&group=eu.domibus&name=domibus-msh-sql-distribution&maven.extension=zip&sort=version&direction=desc"
-
+wget -O domibus-msh-sql-distribution.zip "https://ec.europa.eu/digital-building-blocks/artifact/service/rest/v1/search/assets/download?repository=eDelivery&group=eu.domibus&name=domibus-msh-sql-distribution&maven.extension=zip&sort=version&direction=desc"
 FROM mysql:8.4
 
 ENV MYSQL_ROOT_PASSWORD=rootpassword
