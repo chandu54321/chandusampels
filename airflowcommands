@@ -21,3 +21,71 @@ sudo tcpdump -i any host <windows-vm-ip> and port <api-port> -w capture.pcap
 keepalive_timeout 75s;      # should be > client's PooledConnectionIdleTimeout
 ssl_session_cache shared:SSL:10m;
 ssl_session_timeout 10m;
+
+
+
+
+
+
+Simplest test: netcat (raw TCP, no HTTP/TLS involved)
+
+On the Linux VM (listener):
+
+bash
+nc -lvp 5000
+
+On the Windows VM (client):
+If you have WSL or Git Bash:
+
+bash
+nc -v <linux-vm-ip> 5000
+
+Or with PowerShell (no netcat needed):
+
+powershell
+$client = New-Object System.Net.Sockets.TcpClient("<linux-vm-ip>", 5000)
+$stream = $client.GetStream()
+Write-Host "Connected at $(Get-Date)"
+while ($client.Connected) {
+    Start-Sleep -Seconds 30
+    Write-Host "Still connected at $(Get-Date)"
+}
+Write-Host "Disconnected at $(Get-Date)"
+
+Type nothing, just leave both sides open and idle. Note the exact timestamp when the connection drops. That's your real idle timeout, independent of app/HTTPS logic.
+
+Better test: with packet capture running simultaneously
+
+Run this alongside the above so you catch how it dies (RST vs silent drop vs FIN):
+
+bash
+# On Linux VM, in a separate terminal
+sudo tcpdump -i any host <windows-vm-ip> and port 5000 -w idle_test.pcap
+
+After it drops, check the capture:
+
+bash
+tcpdump -r idle_test.pcap -n
+
+Look for a R (RST) flag near the failure timestamp, and note which IP sent it — that tells you whether it's the Linux box, the Windows box, or a device in between (if the RST source IP is neither VM's own IP, it's a device on the path spoofing/relaying).
+
+Even more precise: TCP keepalive probe timing test
+
+To find the exact idle threshold rather than just confirming ~15 min, script incrementing waits:
+
+PowerShell — test at 5, 10, 12, 14, 15, 16 min:
+
+powershell
+$times = @(300, 600, 720, 840, 900, 960) # seconds
+foreach ($t in $times) {
+    $client = New-Object System.Net.Sockets.TcpClient("<linux-ip>", 5000)
+    Write-Host "Connected, waiting $t seconds..."
+    Start-Sleep -Seconds $t
+    try {
+        $client.Client.Send([byte[]](0)) | Out-Null
+        Write-Host "$t sec: still alive"
+    } catch {
+        Write-Host "$t sec: DEAD - $($_.Exception.Message)"
+    }
+    $client.Close()
+}
