@@ -12,3 +12,7 @@ sysctl net.ipv4.tcp_keepalive_probes
 sudo sysctl -w net.ipv4.tcp_keepalive_time=300
 sudo sysctl -w net.ipv4.tcp_keepalive_intvl=30
 sudo sysctl -w net.ipv4.tcp_keepalive_probes=4
+
+
+# On Linux API box
+sudo tcpdump -i any host <windows-vm-ip> and port <api-port> -w capture.pcap
