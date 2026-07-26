@@ -16,3 +16,8 @@ sudo sysctl -w net.ipv4.tcp_keepalive_probes=4
 
 # On Linux API box
 sudo tcpdump -i any host <windows-vm-ip> and port <api-port> -w capture.pcap
+
+
+keepalive_timeout 75s;      # should be > client's PooledConnectionIdleTimeout
+ssl_session_cache shared:SSL:10m;
+ssl_session_timeout 10m;
