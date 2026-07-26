@@ -1,3 +1,14 @@
 docker compose exec mysql mysql -uroot -pairflow -e "KILL 12; KILL 15; KILL 16;"
 
 docker compose exec mysql mysql -uroot -pairflow -e "SHOW FULL PROCESSLIST;"
+
+
+# check current keepalive settings
+sysctl net.ipv4.tcp_keepalive_time
+sysctl net.ipv4.tcp_keepalive_intvl
+sysctl net.ipv4.tcp_keepalive_probes
+
+# set keepalive to fire well before 15 min, e.g. every 5 min
+sudo sysctl -w net.ipv4.tcp_keepalive_time=300
+sudo sysctl -w net.ipv4.tcp_keepalive_intvl=30
+sudo sysctl -w net.ipv4.tcp_keepalive_probes=4
