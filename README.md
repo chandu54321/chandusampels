@@ -38,3 +38,78 @@ deploy:
     - docker push $DOCKER_IMAGE:$DOCKER_TAG
   only:
     - main
+
+
+
+
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  DOCKER_REGISTRY: "abc123.cr.de-fra.ionos.com"
+  DOCKER_IMAGE: "$DOCKER_REGISTRY/sample-python-project"
+
+test:
+  stage: test
+  image: python:3.12
+
+  script:
+    - pip install -r requirements.txt
+    - pytest tests/
+
+
+build:
+  stage: build
+
+  script:
+    # Get the latest version from Git tags
+    - |
+      LATEST_TAG=$(git tag --sort=-v:refname | head -n 1)
+
+      if [ -z "$LATEST_TAG" ]; then
+        VERSION="1.0.0"
+      else
+        VERSION=$(echo "$LATEST_TAG" | sed 's/^v//')
+
+        MAJOR=$(echo "$VERSION" | cut -d. -f1)
+        MINOR=$(echo "$VERSION" | cut -d. -f2)
+        PATCH=$(echo "$VERSION" | cut -d. -f3)
+
+        PATCH=$((PATCH + 1))
+
+        VERSION="$MAJOR.$MINOR.$PATCH"
+      fi
+
+      echo "VERSION=$VERSION" > version.env
+      echo "Building version: $VERSION"
+
+    - source version.env
+
+    # Build versioned image
+    - docker build -t "$DOCKER_IMAGE:$VERSION" .
+
+    # Also tag as latest
+    - docker tag "$DOCKER_IMAGE:$VERSION" "$DOCKER_IMAGE:latest"
+
+  artifacts:
+    reports:
+      dotenv: version.env
+
+
+deploy:
+  stage: deploy
+
+  script:
+    # Login to IONOS Container Registry
+    - echo "$IONOS_REGISTRY_PASSWORD" | docker login "$DOCKER_REGISTRY" -u "$IONOS_REGISTRY_USERNAME" --password-stdin
+
+    # Push versioned image
+    - docker push "$DOCKER_IMAGE:$VERSION"
+
+    # Push latest
+    - docker push "$DOCKER_IMAGE:latest"
+
+  only:
+    - main
