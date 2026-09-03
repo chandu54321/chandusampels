@@ -1,6 +1,10 @@
 pip install "paddleocr==2.7.3" "paddlex==2.1.0" "paddlepaddle==2.6.2"
 
 
+what is avx and avx2 and 
+
+avx2 works but with avx it wonts works .
+
 
    pip uninstall paddlepaddle
    git clone https://github.com/PaddlePaddle/Paddle.git && cd Paddle
