@@ -1,0 +1,35 @@
+docker run -d --name librechat --network librechat-net \
+  -p 3080:3080 \
+  -e HOST=0.0.0.0 \
+  -e PORT=3080 \
+  -e MONGO_URI=mongodb://mongodb:27017/LibreChat \
+  -e CREDS_KEY=fab0bac565794687b98d5657591d5b75a579ab7b7f547ba80c33f6b95b41ca34 \
+  -e CREDS_IV=9b52a140934b35963b747c3e7db26745 \
+  -e JWT_SECRET=CREDfab0bac565794687b98d5657591d5b75a579ab7b7f547ba80c33f6b95b41ca34 \
+  -e JWT_REFRESH_SECRET=bc30344777f9533c939e4d445ce9ba38795e3591319275f1bb1c8ef1e1330a1c \
+  -e ALLOW_REGISTRATION=true \
+  -v $(pwd)/uploads:/app/uploads \
+  -v $(pwd)/logs:/app/logs \
+  librechat/librechat-api:latest
+  
+  
+  docker network create librechat-net
+
+docker run -d --name mongodb --network librechat-net \
+  -v mongo-data:/data/db \
+  mongo
+  
+  
+openssl rand -hex 32   # use for CREDS_KEY and JWT_SECRET
+openssl rand -hex 16   # use for CREDS_IV
+openssl rand -hex 32   # use for JWT_REFRESH_SECRET
+
+
+git clone https://github.com/danny-avila/LibreChat.git
+cd LibreChat
+cp .env.example .env
+
+docker compose pull
+docker compose up -d
+
+
